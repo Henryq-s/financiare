@@ -2,14 +2,18 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { Loader2, ArrowLeft, Mail, CheckCircle, ArrowRight } from 'lucide-react'
+import { useSearchParams } from 'next/navigation'
+import { Suspense } from 'react'
+import { Loader2, ArrowLeft, Mail, CheckCircle, ArrowRight, Info } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { cn } from '@/lib/utils'
 import { LogoMark } from '@/components/LogoMark'
 
 type Step = 'email' | 'sent'
 
-export default function LoginPage() {
+function LoginForm() {
+  const params = useSearchParams()
+  const msg = params.get('msg')
   const [step, setStep] = useState<Step>('email')
   const [email, setEmail] = useState('')
   const [loading, setLoading] = useState(false)
@@ -84,6 +88,13 @@ export default function LoginPage() {
             </p>
           </div>
 
+          {msg === 'ja_tem_conta' && (
+            <div className="mb-5 rounded-lg border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-700 flex gap-2">
+              <Info className="h-4 w-4 mt-0.5 shrink-0" />
+              <span>Você já tem uma conta. Digite seu e-mail para receber o link de acesso.</span>
+            </div>
+          )}
+
           {error && (
             <div className="mb-5 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
               {error}
@@ -143,5 +154,17 @@ export default function LoginPage() {
         </div>
       </div>
     </div>
+  )
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={
+      <div className="flex min-h-screen items-center justify-center bg-[#0F2830]">
+        <div className="h-10 w-10 animate-spin rounded-full border-4 border-emerald-200 border-t-emerald-400" />
+      </div>
+    }>
+      <LoginForm />
+    </Suspense>
   )
 }

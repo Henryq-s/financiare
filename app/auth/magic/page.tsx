@@ -10,19 +10,26 @@ function MagicHandler() {
   const next = params.get('next') ?? '/dashboard'
 
   useEffect(() => {
+    // If Supabase redirected here with an error (e.g. expired confirmation link), go to login
+    const error = params.get('error') ?? new URLSearchParams(window.location.hash.slice(1)).get('error')
+    if (error) {
+      router.replace('/auth/login?msg=ja_tem_conta')
+      return
+    }
+
     const supabase = createClient()
 
     // Handle PKCE code (query param)
     const code = new URLSearchParams(window.location.search).get('code')
     if (code) {
-      supabase.auth.exchangeCodeForSession(code).then(({ error }) => {
-        if (!error) router.replace(next)
-        else router.replace('/auth/login?error=link_expirado')
+      supabase.auth.exchangeCodeForSession(code).then(({ error: exchErr }) => {
+        if (!exchErr) router.replace(next)
+        else router.replace('/auth/login?msg=ja_tem_conta')
       })
       return
     }
 
-    // Handle implicit flow (hash fragment) — used by admin-generated magic links
+    // Handle implicit flow (hash fragment)
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if ((event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') && session) {
         subscription.unsubscribe()
@@ -30,11 +37,10 @@ function MagicHandler() {
       }
     })
 
-    // Trigger session detection from URL hash
     supabase.auth.getSession()
 
     return () => subscription.unsubscribe()
-  }, [router, next])
+  }, [router, next, params])
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-slate-50">

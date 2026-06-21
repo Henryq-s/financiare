@@ -16,10 +16,11 @@ export async function GET(request: Request) {
     const supabase = await createClient()
     const { error } = await supabase.auth.exchangeCodeForSession(code)
     if (!error) {
-      // After email confirmation, go to salvar to claim any pending simulation
-      return NextResponse.redirect(`${origin}/resultado/salvar`)
+      // If `next` was set explicitly (e.g., magic-link auto-login flow), use it.
+      // Otherwise fall back to /resultado/salvar for legacy email-confirmation flow.
+      const destination = searchParams.has('next') ? next : '/resultado/salvar'
+      return NextResponse.redirect(`${origin}${destination}`)
     }
-    // Code exchange failed (likely expired)
     return NextResponse.redirect(`${origin}/auth/confirmar?expired=1`)
   }
 

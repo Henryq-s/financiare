@@ -3,10 +3,6 @@
 import { useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import {
-  User,
-  BarChart2,
-  Briefcase,
-  Home,
   ChevronRight,
   ChevronLeft,
   Loader2,
@@ -16,17 +12,11 @@ import {
 import { NavLogo } from '@/components/LogoMark'
 import { SIMULATION_STEPS } from '@/lib/scoring/questions'
 import { calculateScore } from '@/lib/scoring/algorithm'
-import { createClient } from '@/lib/supabase/client'
 import type { SimulationAnswers } from '@/types'
-import { cn, formatCPF, formatPhone, formatCurrency, parseCurrencyInput } from '@/lib/utils'
+import { cn } from '@/lib/utils'
 
-// ── Icons map for steps ─────────────────────────────────────
-const stepIcons = { User, BarChart2, Briefcase, Home }
-
-// ── Initial empty answers ────────────────────────────────────
 const defaultAnswers: Partial<SimulationAnswers> = {
   restriction_level: 'none',
-  dependents: 0,
   current_income_commitment: 0,
   has_proof_of_income: true,
   has_restrictions: false,
@@ -37,21 +27,17 @@ const defaultAnswers: Partial<SimulationAnswers> = {
 
 export default function SimulacaoPage() {
   const router = useRouter()
-  const [currentStep, setCurrentStep] = useState(0) // 0-indexed
+  const [currentStep, setCurrentStep] = useState(0)
   const [answers, setAnswers] = useState<Partial<SimulationAnswers>>(defaultAnswers)
   const [submitting, setSubmitting] = useState(false)
   const [errors, setErrors] = useState<Record<string, string>>({})
-  const [saveError, setSaveError] = useState('')
 
   const step = SIMULATION_STEPS[currentStep]
   const totalSteps = SIMULATION_STEPS.length
-  const progress = ((currentStep) / totalSteps) * 100
 
-  // ── Field update ─────────────────────────────────────────
   const updateField = useCallback((id: string, value: unknown) => {
     setAnswers((prev) => {
       const next = { ...prev, [id]: value }
-      // Reset down_payment when user says they have no entry
       if (id === 'has_down_payment' && value === false) {
         next.down_payment = 0
       }
@@ -64,19 +50,13 @@ export default function SimulacaoPage() {
     })
   }, [])
 
-  // ── Validate current step ────────────────────────────────
   function validate(): boolean {
     const newErrors: Record<string, string> = {}
-
     for (const q of step.questions) {
       if (!q.required) continue
       const val = answers[q.id as keyof SimulationAnswers]
-
-      // restriction_level only required when has_restrictions = true
       if (q.id === 'restriction_level' && !answers.has_restrictions) continue
-      // down_payment only required when has_down_payment = true
       if (q.id === 'down_payment' && !answers.has_down_payment) continue
-
       if (val === undefined || val === null || val === '') {
         newErrors[q.id] = 'Este campo é obrigatório'
       }
@@ -88,7 +68,6 @@ export default function SimulacaoPage() {
     return Object.keys(newErrors).length === 0
   }
 
-  // ── Navigation ───────────────────────────────────────────
   function handleNext() {
     if (!validate()) return
     if (currentStep < totalSteps - 1) {
@@ -106,39 +85,12 @@ export default function SimulacaoPage() {
     }
   }
 
-  // ── Final submit ──────────────────────────────────────────
   async function handleSubmit() {
     setSubmitting(true)
-    setSaveError('')
-
     const fullAnswers = answers as SimulationAnswers
     const result = calculateScore(fullAnswers)
-
-    const supabase = createClient()
-    const { data: { session } } = await supabase.auth.getSession()
-
-    if (!session?.user) {
-      sessionStorage.setItem('financiare_result', JSON.stringify({ answers: fullAnswers, result }))
-      router.push('/resultado/gate')
-      return
-    }
-
-    const { data, error: insertError } = await supabase
-      .from('simulations')
-      .insert({ user_id: session.user.id, answers: fullAnswers, result })
-      .select('id')
-      .single()
-
-    if (insertError || !data) {
-      const msg = insertError?.message ?? 'no data returned'
-      console.error('[simulacao] insert error:', msg)
-      setSaveError(`Erro ao salvar (${msg}) — resultado exibido localmente.`)
-      sessionStorage.setItem('financiare_result', JSON.stringify({ answers: fullAnswers, result }))
-      router.push('/resultado?local=1')
-      return
-    }
-
-    router.push(`/resultado?id=${data.id}`)
+    sessionStorage.setItem('financiare_result', JSON.stringify({ answers: fullAnswers, result }))
+    router.push('/resultado?local=1')
   }
 
   return (
@@ -146,14 +98,12 @@ export default function SimulacaoPage() {
       {/* Top bar */}
       <div className="sticky top-0 z-10 bg-white border-b border-slate-100 shadow-sm">
         <div className="mx-auto max-w-2xl px-4 py-4">
-          {/* Logo + title */}
           <div className="mb-3 flex items-center justify-between">
             <NavLogo iconSize={22} />
             <span className="text-sm text-slate-400">
               Etapa {currentStep + 1} de {totalSteps}
             </span>
           </div>
-          {/* Progress bar */}
           <div className="h-2 w-full overflow-hidden rounded-full bg-slate-100">
             <div
               className="h-full rounded-full bg-emerald-500 transition-all duration-500"
@@ -183,9 +133,7 @@ export default function SimulacaoPage() {
         {/* Questions */}
         <div className="space-y-6 animate-slide-up">
           {step.questions.map((q) => {
-            // Hide restriction_level if no restrictions
             if (q.id === 'restriction_level' && !answers.has_restrictions) return null
-            // Hide down_payment amount if user has no entry
             if (q.id === 'down_payment' && !answers.has_down_payment) return null
 
             return (
@@ -197,15 +145,12 @@ export default function SimulacaoPage() {
                 {q.sublabel && (
                   <p className="mb-3 text-xs text-slate-400">{q.sublabel}</p>
                 )}
-
-                {/* Render field by type */}
                 <FieldRenderer
                   question={q}
                   value={answers[q.id as keyof SimulationAnswers]}
                   onChange={(val) => updateField(q.id, val)}
                   error={errors[q.id]}
                 />
-
                 {q.hint && (
                   <p className="mt-2 text-xs text-slate-400">{q.hint}</p>
                 )}
@@ -216,13 +161,6 @@ export default function SimulacaoPage() {
             )
           })}
         </div>
-
-        {/* Save error */}
-        {saveError && (
-          <div className="mt-6 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-xs text-red-600">
-            {saveError}
-          </div>
-        )}
 
         {/* Navigation */}
         <div className="mt-8 flex items-center justify-between gap-4">
@@ -302,45 +240,6 @@ function FieldRenderer({ question: q, value, onChange, error }: FieldProps) {
         value={(value as string) ?? ''}
         onChange={(e) => onChange(e.target.value)}
         placeholder={q.placeholder}
-        className={cn(base, borderClass)}
-      />
-    )
-  }
-
-  if (q.type === 'phone') {
-    return (
-      <input
-        type="tel"
-        inputMode="tel"
-        value={(value as string) ?? ''}
-        onChange={(e) => onChange(formatPhone(e.target.value))}
-        placeholder={q.placeholder ?? '(00) 00000-0000'}
-        maxLength={15}
-        className={cn(base, borderClass)}
-      />
-    )
-  }
-
-  if (q.type === 'cpf') {
-    return (
-      <input
-        type="text"
-        value={(value as string) ?? ''}
-        onChange={(e) => onChange(formatCPF(e.target.value))}
-        placeholder={q.placeholder ?? '000.000.000-00'}
-        maxLength={14}
-        className={cn(base, borderClass)}
-      />
-    )
-  }
-
-  if (q.type === 'date') {
-    return (
-      <input
-        type="date"
-        value={(value as string) ?? ''}
-        onChange={(e) => onChange(e.target.value)}
-        max={new Date().toISOString().split('T')[0]}
         className={cn(base, borderClass)}
       />
     )

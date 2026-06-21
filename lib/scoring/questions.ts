@@ -31,69 +31,6 @@ export interface Step {
 export const SIMULATION_STEPS: Step[] = [
   {
     id: 1,
-    title: 'Dados Pessoais',
-    subtitle: 'Precisamos te conhecer para personalizar a análise',
-    icon: 'User',
-    questions: [
-      {
-        id: 'full_name',
-        label: 'Nome Completo',
-        type: 'text',
-        placeholder: 'Seu nome completo',
-        required: true,
-      },
-      {
-        id: 'phone',
-        label: 'Seu número de WhatsApp',
-        type: 'phone',
-        placeholder: '(00) 00000-0000',
-        required: true,
-        hint: 'Usado para entrarmos em contato com sua orientação personalizada.',
-      },
-      {
-        id: 'cpf',
-        label: 'CPF',
-        type: 'cpf',
-        placeholder: '000.000.000-00',
-        required: true,
-        hint: 'Usado apenas para análise do seu perfil. Nenhuma consulta é feita sem sua autorização.',
-      },
-      {
-        id: 'birth_date',
-        label: 'Sua data de nascimento',
-        type: 'date',
-        required: true,
-      },
-      {
-        id: 'marital_status',
-        label: 'Qual seu estado civil?',
-        type: 'select',
-        required: true,
-        options: [
-          { value: 'single', label: 'Solteiro(a)' },
-          { value: 'married', label: 'Casado(a)' },
-          { value: 'stable_union', label: 'União Estável' },
-          { value: 'divorced', label: 'Divorciado(a)' },
-          { value: 'widowed', label: 'Viúvo(a)' },
-        ],
-      },
-      {
-        id: 'dependents',
-        label: 'Você possui dependentes?',
-        type: 'select',
-        required: true,
-        hint: 'Filhos, cônjuge dependente, etc.',
-        options: [
-          { value: 0, label: 'Nenhum' },
-          { value: 1, label: '1' },
-          { value: 2, label: '2' },
-          { value: 3, label: '3 ou mais' },
-        ],
-      },
-    ],
-  },
-  {
-    id: 2,
     title: 'Agora vamos entender sua situação atual',
     subtitle: 'Suas respostas nos ajudam a entender o que pode aprovar ou impedir seu financiamento hoje.',
     icon: 'BarChart2',
@@ -179,7 +116,7 @@ export const SIMULATION_STEPS: Step[] = [
     ],
   },
   {
-    id: 3,
+    id: 2,
     title: 'Qual é a sua forma de renda?',
     subtitle: 'Cada tipo de renda é analisado de forma diferente, queremos entender a sua.',
     icon: 'Briefcase',
@@ -230,7 +167,7 @@ export const SIMULATION_STEPS: Step[] = [
     ],
   },
   {
-    id: 4,
+    id: 3,
     title: 'Qual é o seu objetivo com a casa própria?',
     subtitle: 'Vamos entender seu objetivo para direcionar seu financiamento da forma correta.',
     icon: 'Home',

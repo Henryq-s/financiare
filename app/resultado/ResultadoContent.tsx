@@ -6,7 +6,7 @@ import Link from 'next/link'
 import {
   CheckCircle, AlertCircle, XCircle,
   Shield, CreditCard, TrendingUp, Briefcase, DollarSign,
-  LayoutDashboard, Clock, AlertTriangle, BookmarkPlus,
+  LayoutDashboard, Clock, AlertTriangle,
   ChevronRight,
 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
@@ -14,6 +14,7 @@ import type { ScoringResult, ScoringFactor, FactorStatus } from '@/types'
 import { cn, scoreColor, scoreLabel, statusBarColor } from '@/lib/utils'
 import ScoreGauge from '@/components/ScoreGauge'
 import ContactCTA from './ContactCTA'
+import LeadCaptureForm from './LeadCaptureForm'
 import { NavLogo } from '@/components/LogoMark'
 
 // ── Types ──────────────────────────────────────────────────────
@@ -451,6 +452,7 @@ export default function ResultadoContent() {
   const local = searchParams.get('local')
 
   const [result, setResult] = useState<ScoringResult | null>(null)
+  const [rawAnswers, setRawAnswers] = useState<unknown>(null)
   const [loading, setLoading] = useState(true)
   const [activeModule, setActiveModule] = useState<ModuleId>('overview')
 
@@ -458,7 +460,11 @@ export default function ResultadoContent() {
     async function load() {
       if (local) {
         const raw = sessionStorage.getItem('financiare_result')
-        if (raw) setResult(JSON.parse(raw).result)
+        if (raw) {
+          const parsed = JSON.parse(raw)
+          setResult(parsed.result)
+          setRawAnswers(parsed.answers)
+        }
         setLoading(false)
         return
       }
@@ -503,9 +509,9 @@ export default function ResultadoContent() {
       <nav className="sticky top-0 z-30 border-b border-slate-100 bg-white px-4 py-3 shadow-sm">
         <div className="mx-auto flex max-w-6xl items-center justify-between">
           <NavLogo iconSize={22} />
-          {local && (
-            <Link href="/auth/login" className="flex items-center gap-1.5 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs font-semibold text-emerald-700 hover:bg-emerald-100 transition-colors">
-              <BookmarkPlus className="h-3.5 w-3.5" /> Salvar resultado
+          {!local && (
+            <Link href="/simulacao" className="flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-50 transition-colors">
+              Nova análise
             </Link>
           )}
         </div>
@@ -513,6 +519,13 @@ export default function ResultadoContent() {
 
       {/* pb-24 on mobile to clear bottom bar */}
       <div className="mx-auto max-w-6xl px-4 py-6 pb-24 md:pb-6">
+        {/* Lead capture — only shown before user saves */}
+        {local && (
+          <div className="mb-6">
+            <LeadCaptureForm answers={rawAnswers} result={result} />
+          </div>
+        )}
+
         <div className="flex gap-6">
           {/* Sidebar — desktop only */}
           <aside className="hidden md:block w-56 shrink-0">

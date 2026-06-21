@@ -64,15 +64,15 @@ export const LEAD_STAGE_COLORS: Record<LeadStage, string> = {
 // Questionnaire answers (stored as JSON in Supabase)
 // ============================================================
 export interface SimulationAnswers {
-  // Step 1 – Dados Pessoais
-  full_name: string
-  phone: string
-  cpf: string
-  birth_date: string        // ISO date string "YYYY-MM-DD"
-  marital_status: MaritalStatus
-  dependents: number
+  // Lead capture — collected after quiz, stored in answers for admin CRM
+  full_name?: string
+  phone?: string
+  cpf?: string
+  birth_date?: string
+  marital_status?: MaritalStatus
+  dependents?: number
 
-  // Step 2 – Situação Financeira
+  // Step 1 – Situação Financeira
   has_restrictions: boolean
   restriction_level: RestrictionLevel
   credit_score_range: CreditScoreRange

@@ -455,6 +455,7 @@ export default function ResultadoContent() {
   const [rawAnswers, setRawAnswers] = useState<unknown>(null)
   const [loading, setLoading] = useState(true)
   const [activeModule, setActiveModule] = useState<ModuleId>('overview')
+  const [leadCaptured, setLeadCaptured] = useState(false)
 
   useEffect(() => {
     async function load() {
@@ -517,8 +518,10 @@ export default function ResultadoContent() {
         </div>
       </nav>
 
-      {/* Blocking modal — shown until user creates account */}
-      {local && result && <LeadCaptureForm answers={rawAnswers} result={result} />}
+      {/* Blocking modal — shown until lead data is submitted */}
+      {local && result && !leadCaptured && (
+        <LeadCaptureForm answers={rawAnswers} result={result} onSuccess={() => setLeadCaptured(true)} />
+      )}
 
       {/* pb-24 on mobile to clear bottom bar */}
       <div className="mx-auto max-w-6xl px-4 py-6 pb-24 md:pb-6">

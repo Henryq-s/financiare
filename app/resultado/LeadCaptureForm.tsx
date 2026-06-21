@@ -3,12 +3,12 @@
 import { useState } from 'react'
 import { Loader2, CheckCircle, Phone, Mail, User, Lock, BarChart2, TrendingUp, Shield } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { createClient } from '@/lib/supabase/client'
 import type { ScoringResult } from '@/types'
 
 interface Props {
   answers: unknown
   result: ScoringResult
+  onSuccess: () => void
 }
 
 function formatPhone(val: string) {
@@ -19,7 +19,7 @@ function formatPhone(val: string) {
   return `(${d.slice(0, 2)}) ${d.slice(2, 7)}-${d.slice(7)}`
 }
 
-export default function LeadCaptureModal({ answers, result }: Props) {
+export default function LeadCaptureForm({ answers, result, onSuccess }: Props) {
   const [fullName, setFullName] = useState('')
   const [phone, setPhone] = useState('')
   const [email, setEmail] = useState('')
@@ -38,21 +38,11 @@ export default function LeadCaptureModal({ answers, result }: Props) {
 
     setLoading(true)
 
-    // Senha aleatória — usuário nunca precisa saber, login é automático
-    const tempPassword = crypto.randomUUID()
-
     try {
       const res = await fetch('/api/lead-register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          full_name: fullName,
-          phone,
-          email,
-          tempPassword,
-          answers,
-          result,
-        }),
+        body: JSON.stringify({ full_name: fullName, phone, email, answers, result }),
       })
 
       const data = await res.json()
@@ -63,26 +53,7 @@ export default function LeadCaptureModal({ answers, result }: Props) {
         return
       }
 
-      if (data.isExistingUser) {
-        // Usuário já existe — redireciona para login por link de e-mail
-        window.location.href = '/auth/login?msg=ja_tem_conta'
-        return
-      }
-
-      // Novo usuário — login direto com a senha temporária (sem e-mail)
-      const supabase = createClient()
-      const { error: signInError } = await supabase.auth.signInWithPassword({
-        email,
-        password: tempPassword,
-      })
-
-      if (signInError) {
-        setError('Erro ao acessar sua conta. Tente novamente.')
-        setLoading(false)
-        return
-      }
-
-      window.location.href = '/dashboard'
+      onSuccess()
     } catch {
       setError('Erro de conexão. Tente novamente.')
       setLoading(false)
@@ -206,7 +177,7 @@ export default function LeadCaptureModal({ answers, result }: Props) {
               )}
             >
               {loading ? (
-                <><Loader2 className="h-4 w-4 animate-spin" /> Acessando resultado...</>
+                <><Loader2 className="h-4 w-4 animate-spin" /> Salvando...</>
               ) : (
                 <><CheckCircle className="h-4 w-4" /> Ver meu resultado completo</>
               )}
@@ -214,7 +185,7 @@ export default function LeadCaptureModal({ answers, result }: Props) {
           </form>
 
           <p className="mt-3 text-center text-xs text-slate-400">
-            Gratuito · Sem senha · Sem confirmação de e-mail
+            Gratuito · Seus dados ficam seguros
           </p>
         </div>
       </div>

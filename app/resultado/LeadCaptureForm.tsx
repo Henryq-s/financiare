@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { Loader2, CheckCircle, Phone, Mail, User, Lock, BarChart2, TrendingUp, Shield } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { createClient } from '@/lib/supabase/client'
 import type { ScoringResult } from '@/types'
 
 interface Props {
@@ -37,11 +38,21 @@ export default function LeadCaptureModal({ answers, result }: Props) {
 
     setLoading(true)
 
+    // Senha aleatória — usuário nunca precisa saber, login é automático
+    const tempPassword = crypto.randomUUID()
+
     try {
       const res = await fetch('/api/lead-register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ full_name: fullName, phone, email, answers, result }),
+        body: JSON.stringify({
+          full_name: fullName,
+          phone,
+          email,
+          tempPassword,
+          answers,
+          result,
+        }),
       })
 
       const data = await res.json()
@@ -52,7 +63,26 @@ export default function LeadCaptureModal({ answers, result }: Props) {
         return
       }
 
-      window.location.href = data.redirectUrl
+      if (data.isExistingUser) {
+        // Usuário já existe — redireciona para login por link de e-mail
+        window.location.href = '/auth/login?msg=ja_tem_conta'
+        return
+      }
+
+      // Novo usuário — login direto com a senha temporária (sem e-mail)
+      const supabase = createClient()
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email,
+        password: tempPassword,
+      })
+
+      if (signInError) {
+        setError('Erro ao acessar sua conta. Tente novamente.')
+        setLoading(false)
+        return
+      }
+
+      window.location.href = '/dashboard'
     } catch {
       setError('Erro de conexão. Tente novamente.')
       setLoading(false)
@@ -60,7 +90,6 @@ export default function LeadCaptureModal({ answers, result }: Props) {
   }
 
   return (
-    /* Full-screen blocking overlay */
     <div className="fixed inset-0 z-50 flex items-end justify-center sm:items-center px-0 sm:px-4">
       {/* Blurred backdrop */}
       <div className="absolute inset-0 bg-slate-900/70 backdrop-blur-sm" />
@@ -84,7 +113,7 @@ export default function LeadCaptureModal({ answers, result }: Props) {
             Seu resultado está pronto!
           </h2>
           {/* Blurred score teaser */}
-          <div className="mt-3 flex items-center justify-center gap-3">
+          <div className="mt-3 flex items-center justify-center">
             <div className="relative">
               <span
                 className="text-5xl font-extrabold text-emerald-400 select-none"
@@ -98,7 +127,7 @@ export default function LeadCaptureModal({ answers, result }: Props) {
             </div>
           </div>
           <p className="mt-2 text-sm text-slate-400">
-            Crie sua conta gratuita para visualizar
+            Preencha seus dados para visualizar gratuitamente
           </p>
         </div>
 
@@ -185,7 +214,7 @@ export default function LeadCaptureModal({ answers, result }: Props) {
           </form>
 
           <p className="mt-3 text-center text-xs text-slate-400">
-            Gratuito · Sem senha · Acesso imediato
+            Gratuito · Sem senha · Sem confirmação de e-mail
           </p>
         </div>
       </div>

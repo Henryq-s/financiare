@@ -1,7 +1,7 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
-export default async function proxy(request: NextRequest) {
+export default async function middleware(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request })
 
   const supabase = createServerClient(
@@ -23,16 +23,18 @@ export default async function proxy(request: NextRequest) {
     },
   )
 
-  // Refresh session if expired
+  // Refresh session
   const { data: { user } } = await supabase.auth.getUser()
 
-  // Protect authenticated routes
   const pathname = request.nextUrl.pathname
-  const isProtected = pathname.startsWith('/dashboard') || pathname.startsWith('/admin')
-  if (isProtected && !user) {
-    const url = request.nextUrl.clone()
-    url.pathname = '/auth/login'
-    return NextResponse.redirect(url)
+
+  // Protect /admin routes (but not /admin-login itself)
+  if (pathname.startsWith('/admin') && !pathname.startsWith('/admin-login')) {
+    if (!user) {
+      const url = request.nextUrl.clone()
+      url.pathname = '/admin-login'
+      return NextResponse.redirect(url)
+    }
   }
 
   return supabaseResponse

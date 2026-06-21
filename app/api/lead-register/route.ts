@@ -53,8 +53,8 @@ export async function POST(req: NextRequest) {
     .select('id')
     .single()
 
-  // Generate magic link → user auto-logged in without password
-  const redirectTo = `${origin}/auth/callback?next=/dashboard`
+  // Generate magic link — redirects to /auth/magic which handles hash tokens client-side
+  const redirectTo = `${origin}/auth/magic?next=/dashboard`
   const { data: linkData, error: linkErr } = await admin.auth.admin.generateLink({
     type: 'magiclink',
     email,

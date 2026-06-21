@@ -517,15 +517,11 @@ export default function ResultadoContent() {
         </div>
       </nav>
 
+      {/* Blocking modal — shown until user creates account */}
+      {local && result && <LeadCaptureForm answers={rawAnswers} result={result} />}
+
       {/* pb-24 on mobile to clear bottom bar */}
       <div className="mx-auto max-w-6xl px-4 py-6 pb-24 md:pb-6">
-        {/* Lead capture — only shown before user saves */}
-        {local && (
-          <div className="mb-6">
-            <LeadCaptureForm answers={rawAnswers} result={result} />
-          </div>
-        )}
-
         <div className="flex gap-6">
           {/* Sidebar — desktop only */}
           <aside className="hidden md:block w-56 shrink-0">
